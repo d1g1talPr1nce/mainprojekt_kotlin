@@ -2,7 +2,7 @@
 
 ### Hlavní projekt v předmětu Mobilní technologie
 
-Team:
+**Team**:
 Jaroslav Zvoníček
 Michal Chvosta
 Karel Typovsky
