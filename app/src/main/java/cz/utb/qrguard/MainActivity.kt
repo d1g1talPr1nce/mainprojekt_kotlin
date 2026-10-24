@@ -20,8 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             QRGuardTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    CameraPermissionContent(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
