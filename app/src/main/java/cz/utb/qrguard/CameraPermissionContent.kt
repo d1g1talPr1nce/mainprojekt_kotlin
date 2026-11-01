@@ -78,6 +78,11 @@ fun CameraPermissionContent(modifier: Modifier = Modifier) {
         }
     }
 
+    if (permissionGranted) {
+        CameraPreview(modifier = modifier)
+        return
+    }
+
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
