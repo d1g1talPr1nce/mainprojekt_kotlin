@@ -52,8 +52,12 @@ fun QRGuardApp(navController: NavHostController = rememberNavController()) {
                 )
             }
             composable(Screen.Result.route) {
+                // Data výsledku a akce tlačítek se napojí přes ViewModel.
                 ResultScreen(
-                    onBack = { navController.popBackStack() }
+                    result = null,
+                    onBack = { navController.popBackStack() },
+                    onOpenInBrowser = {},
+                    onSave = {}
                 )
             }
             composable(Screen.History.route) {
