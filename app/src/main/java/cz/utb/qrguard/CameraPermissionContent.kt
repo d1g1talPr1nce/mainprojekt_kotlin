@@ -24,7 +24,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable
-fun CameraPermissionContent(modifier: Modifier = Modifier) {
+fun CameraPermissionContent(
+    onQrCodeScanned: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val activity = checkNotNull(LocalActivity.current)
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -79,7 +82,7 @@ fun CameraPermissionContent(modifier: Modifier = Modifier) {
     }
 
     if (permissionGranted) {
-        CameraPreview(modifier = modifier)
+        CameraPreview(onQrCodeScanned = onQrCodeScanned,modifier = modifier)
         return
     }
 
