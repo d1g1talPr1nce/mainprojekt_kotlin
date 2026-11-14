@@ -48,6 +48,14 @@ class UrlAnalyzerTest {
     }
 
     @Test
+    fun `zpetne lomitko ukoncuje domenu stejne jako lomitko`() {
+        // Prohlížeč bere \ jako /, takže zavináč je až v cestě a cílem je podvod.example.
+        val result = UrlAnalyzer.analyze("https://podvod.example\\@www.mojebanka.cz/login")
+
+        assertEquals("podvod.example", result?.domain)
+    }
+
+    @Test
     fun `mezery okolo odkazu se ignoruji`() {
         assertEquals("example.com", UrlAnalyzer.analyze("  https://example.com/  ")?.domain)
     }
