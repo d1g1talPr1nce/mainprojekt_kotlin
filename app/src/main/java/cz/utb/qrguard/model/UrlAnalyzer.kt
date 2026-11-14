@@ -41,12 +41,15 @@ object UrlAnalyzer {
         return ScanResult(fullUrl = url, domain = domain, warnings = warnings)
     }
 
-    // Doména je část za "://" až k prvnímu /, ? nebo #.
+    // Doména je část za "://" až k prvnímu /, \, ? nebo #.
+    // Zpětné lomítko bere prohlížeč u http/https stejně jako lomítko (standard WHATWG URL),
+    // proto musí ukončit doménu i tady – jinak by https://podvod.cz\@banka.cz ukázal
+    // doménu banka.cz, ale prohlížeč by otevřel podvod.cz.
     // Přihlašovací údaje před zavináčem a port za dvojtečkou do domény nepatří –
     // skutečný cíl odkazu je až to, co je za zavináčem (http://banka.cz@podvod.cz).
     private fun extractDomain(url: String): String {
         val authority = url.substringAfter("://")
-            .takeWhile { it != '/' && it != '?' && it != '#' }
+            .takeWhile { it != '/' && it != '\\' && it != '?' && it != '#' }
         val domainWithPort = authority.substringAfterLast('@')
         val domain = if (domainWithPort.startsWith("[")) {
             // IPv6 adresa je v hranatých závorkách, dvojtečky v ní neoddělují port.
