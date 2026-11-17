@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -24,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import cz.utb.qrguard.ui.screens.HistoryScreen
 import cz.utb.qrguard.ui.screens.ResultScreen
 import cz.utb.qrguard.ui.screens.ScannerScreen
+import cz.utb.qrguard.ui.viewmodel.ScanViewModel
 
 // Položky dolní navigační lišty (Výsledek není hlavní obrazovka,
 // otevírá se ze skeneru nebo z historie).
@@ -37,6 +40,11 @@ private val bottomNavItems = listOf(
 // Kořenová komponenta aplikace – Scaffold s dolní lištou a NavHost se třemi obrazovkami.
 @Composable
 fun QRGuardApp(navController: NavHostController = rememberNavController()) {
+    // ViewModel vytvořený mimo NavHost je společný pro všechny obrazovky
+    // (patří k aktivitě), takže Výsledek vidí to, co načetl Skener.
+    val scanViewModel: ScanViewModel = viewModel()
+    val scanUiState by scanViewModel.uiState.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = { QRGuardBottomBar(navController) }
@@ -48,13 +56,16 @@ fun QRGuardApp(navController: NavHostController = rememberNavController()) {
         ) {
             composable(Screen.Scanner.route) {
                 ScannerScreen(
-                    onScanned = { navController.navigate(Screen.Result.route) }
+                    onScanned = { rawValue ->
+                        scanViewModel.onQrCodeScanned(rawValue)
+                        navController.navigate(Screen.Result.route)
+                    }
                 )
             }
             composable(Screen.Result.route) {
-                // Data výsledku a akce tlačítek se napojí přes ViewModel.
+                // Akce tlačítek (otevření, uložení) se napojí v dalších krocích.
                 ResultScreen(
-                    result = null,
+                    uiState = scanUiState,
                     onBack = { navController.popBackStack() },
                     onOpenInBrowser = {},
                     onSave = {}
