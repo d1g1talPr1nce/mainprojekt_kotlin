@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -39,15 +40,15 @@ import androidx.compose.ui.unit.dp
 import cz.utb.qrguard.model.ScanResult
 import cz.utb.qrguard.model.WarningType
 import cz.utb.qrguard.ui.theme.QRGuardTheme
+import cz.utb.qrguard.ui.viewmodel.ScanUiState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// Obrazovka výsledku kontroly. Data zatím dostává jako parametr,
-// později je bude získávat přes ViewModel.
+// Obrazovka výsledku kontroly. Zobrazuje stav, který připraví ScanViewModel.
 @Composable
 fun ResultScreen(
-    result: ScanResult?,
+    uiState: ScanUiState,
     onBack: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onSave: () -> Unit,
@@ -62,15 +63,87 @@ fun ResultScreen(
     ) {
         ResultHeader(onBack = onBack)
 
-        if (result == null) {
-            Text("Zatím nebyl naskenován žádný QR kód.")
-        } else {
-            ResultContent(
-                result = result,
-                onOpenInBrowser = onOpenInBrowser,
-                onSave = onSave
+        when (uiState) {
+            ScanUiState.Idle ->
+                Text("Zatím nebyl naskenován žádný QR kód.")
+
+            is ScanUiState.NotWebLink ->
+                NotWebLinkContent(
+                    rawValue = uiState.rawValue,
+                    onScanAgain = onBack
+                )
+
+            is ScanUiState.Success ->
+                ResultContent(
+                    result = uiState.result,
+                    onOpenInBrowser = onOpenInBrowser,
+                    onSave = onSave
+                )
+        }
+    }
+}
+
+// Srozumitelná zpráva pro QR kód, který neobsahuje webový odkaz.
+@Composable
+private fun NotWebLinkContent(
+    rawValue: String,
+    onScanAgain: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "QR kód neobsahuje webový odkaz",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            Text(
+                text = "Aplikace kontroluje pouze odkazy začínající http:// nebo https://.",
+                style = MaterialTheme.typography.bodyMedium
             )
         }
+    }
+
+    if (rawValue.isNotBlank()) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Obsah QR kódu",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = rawValue,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+
+    Button(
+        onClick = onScanAgain,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = Icons.Filled.QrCodeScanner,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text("Skenovat znovu")
     }
 }
 
@@ -265,7 +338,7 @@ private val previewWithoutWarnings = ScanResult(
 private fun ResultScreenWarningsPreview() {
     QRGuardTheme {
         ResultScreen(
-            result = previewWithWarnings,
+            uiState = ScanUiState.Success(previewWithWarnings),
             onBack = {},
             onOpenInBrowser = {},
             onSave = {}
@@ -278,7 +351,7 @@ private fun ResultScreenWarningsPreview() {
 private fun ResultScreenNoWarningsPreview() {
     QRGuardTheme {
         ResultScreen(
-            result = previewWithoutWarnings,
+            uiState = ScanUiState.Success(previewWithoutWarnings),
             onBack = {},
             onOpenInBrowser = {},
             onSave = {}
@@ -291,10 +364,24 @@ private fun ResultScreenNoWarningsPreview() {
 private fun ResultScreenEmptyPreview() {
     QRGuardTheme {
         ResultScreen(
-            result = null,
+            uiState = ScanUiState.Idle,
             onBack = {},
             onOpenInBrowser = {},
             onSave = {}
         )
     }
 }
+
+@Preview(showBackground = true, name = "Není webový odkaz")
+@Composable
+private fun ResultScreenNotWebLinkPreview() {
+    QRGuardTheme {
+        ResultScreen(
+            uiState = ScanUiState.NotWebLink("WIFI:S:MojeSit;T:WPA;P:tajneheslo;;"),
+            onBack = {},
+            onOpenInBrowser = {},
+            onSave = {}
+        )
+    }
+}
+
