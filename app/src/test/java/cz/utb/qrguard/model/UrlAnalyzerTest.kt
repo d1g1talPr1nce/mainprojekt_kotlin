@@ -93,6 +93,35 @@ class UrlAnalyzerTest {
         assertEquals(emptyList<WarningType>(), result?.warnings)
     }
 
+    @Test
+    fun `ip adresa zapsana jako jedno cislo je upozorneni`() {
+        // 3232235521 = 192 * 256^3 + 168 * 256^2 + 0 * 256 + 1 = 192.168.0.1
+        val result = UrlAnalyzer.analyze("http://3232235521/login")
+
+        assertEquals(
+            listOf(WarningType.INSECURE_HTTP, WarningType.IP_ADDRESS),
+            result?.warnings
+        )
+    }
+
+    @Test
+    fun `ip adresa v sestnactkovem a osmickovem zapisu je upozorneni`() {
+        assertEquals(listOf(WarningType.IP_ADDRESS), UrlAnalyzer.analyze("https://0xC0A80001/")?.warnings)
+        assertEquals(listOf(WarningType.IP_ADDRESS), UrlAnalyzer.analyze("https://0300.0250.0.1/")?.warnings)
+    }
+
+    @Test
+    fun `zkracena ip adresa a koncova tecka jsou upozorneni`() {
+        assertEquals(listOf(WarningType.IP_ADDRESS), UrlAnalyzer.analyze("https://192.168.1/")?.warnings)
+        assertEquals(listOf(WarningType.IP_ADDRESS), UrlAnalyzer.analyze("https://192.168.0.1./")?.warnings)
+    }
+
+    @Test
+    fun `domena s cisly neni ip adresa`() {
+        assertEquals(emptyList<WarningType>(), UrlAnalyzer.analyze("https://1.2.3.example.com/")?.warnings)
+        assertEquals(emptyList<WarningType>(), UrlAnalyzer.analyze("https://0xdead.cz/")?.warnings)
+    }
+
     // --- Pravidlo: zkracovač odkazů ---
 
     @Test
